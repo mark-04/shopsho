@@ -8,7 +8,7 @@ export default function App(
   state: ApplicationState,
   attachSelfToStateManager: ((setState: (state: ApplicationState) => void) => Model)
 ) {
-  const [, setViewState] = useState(state);
+  const [viewState, setViewState] = useState(state);
   const model = attachSelfToStateManager(setViewState);
 
   return (
