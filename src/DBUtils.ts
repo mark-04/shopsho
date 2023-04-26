@@ -1,4 +1,4 @@
-import { append, appendBefore, List, project, removeElt, extractElt, cons } from "./List";
+import { append, appendBefore, List, project, removeElt, cons, moveEltBefore } from "./List";
 
 import {
   uuid,
@@ -117,7 +117,7 @@ function removeList(db: IDBDatabase, listID: uuid): Promise<void> {
       const getStateRequest = stateStore.get(DB_VERSION);
       getStateRequest.onsuccess = (_) => {
         const state = getStateRequest.result as StateRecord;
-        state.shoppingLists = removeElt((id) => id === listID, state.shoppingLists);
+        removeElt((id) => id === listID, state.shoppingLists);
 
         stateStore.put(state);
       }
@@ -143,16 +143,11 @@ function pinList(db: IDBDatabase, listID: uuid): Promise<void> {
         const getStateRequest = stateStore.get(DB_VERSION);
         getStateRequest.onsuccess = (_) => {
           const state = getStateRequest.result as StateRecord;
+          // remove element from whatever position it is and put it in the head of a list
+          const id = removeElt((id) => id === listID, state.shoppingLists);
+          state.shoppingLists = cons(id, state.shoppingLists);
 
-          const pinnedID: { element?: string } = {};
-          const restIDs = extractElt((id) => id === listID, state.shoppingLists, pinnedID);
-
-          if (!pinnedID.element)
-            transaction.abort(); // should never happen 
-          else {
-            state.shoppingLists = cons(pinnedID.element, restIDs);
-            stateStore.put(state);
-          }
+          stateStore.put(state);
         }
       }
     }
@@ -242,17 +237,9 @@ function moveListItem(db: IDBDatabase, listID: uuid, listItemID: uuid, nextSibli
     const getListRequest = store.get(listID);
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
+      list.items = moveEltBefore(i => i.id === listItemID, s => s.id === nextSiblingID, list.items);
 
-      const listItem: { element?: ShoppingListItem } = {};
-      const restElts = extractElt((item) => item.id === listItemID, list.items, listItem);
-      const { element } = listItem;
-
-      if (!element) {
-        transaction.abort(); //TODO: log error 
-      } else {
-        list.items = appendBefore(element, (x) => x.id === nextSiblingID, restElts);
-        store.put(list);
-      }
+      store.put(list);
     }
   })
 }
@@ -268,7 +255,7 @@ function removeListItem(db: IDBDatabase, listID: uuid, listItemID: uuid): Promis
     const getListRequest = store.get(listID);
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
-      list.items = removeElt((elt) => elt.id === listItemID, list.items);
+      removeElt((elt) => elt.id === listItemID, list.items);
 
       store.put(list);
     }
@@ -286,7 +273,7 @@ function editListItem(db: IDBDatabase, listID: uuid, listItemID: uuid, content: 
     const getListRequest = store.get(listID);
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
-      list.items = project((elt) => elt.id === listItemID, (elt) => (elt.content = content, elt), list.items);
+      project((l) => l.id === listItemID, (l) => (l.content = content, l), list.items);
 
       store.put(list);
     }
@@ -305,7 +292,7 @@ function markListItemCompleted(db: IDBDatabase, listID: uuid, listItemID: uuid):
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
       const completed = ShoppingListItemType.CompletedTask;
-      list.items = project((elt) => elt.id === listItemID, (elt) => (elt.type = completed, elt), list.items);
+      project((l) => l.id === listItemID, (l) => (l.type = completed, l), list.items);
 
       store.put(list);
     }
@@ -324,7 +311,7 @@ function markListItemPending(db: IDBDatabase, listID: uuid, listItemID: uuid): P
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
       const pending = ShoppingListItemType.PendingTask;
-      list.items = project((elt) => elt.id === listItemID, (elt) => (elt.type = pending, elt), list.items);
+      project((l) => l.id === listItemID, (l) => (l.type = pending, l), list.items);
 
       store.put(list);
     }

@@ -9,17 +9,17 @@ export type tag = string
 // These actions do not cover all possible state changes, 
 // only those a user has control over (hence the name, `Model`, i.e. user's mental model).
 export type Model = {
-  addList: (list: ShoppingList) => void,
-  pinList: (listID: uuid) => void,
-  removeList: (listID: uuid) => void,
-  addTagsToList: (listID: uuid, tags: tag[]) => void,
-  removeTagsFromList: (listID: uuid, tags: tag[]) => void,
-  addListItem: (listID: uuid, listItem: ShoppingListItem) => void,
-  moveListItem: (listID: uuid, listItemID: uuid, nextSiblingID: uuid) => void,
-  removeListItem: (listID: uuid, listItemID: uuid) => void,
-  editListItem: (listID: uuid, listItemID: uuid, content: string) => void,
-  markListItemCompleted: (listID: uuid, listItemID: uuid) => void,
-  markListItemPending: (listID: uuid, listItemID: uuid) => void,
+  addList: (list: ShoppingList) => Promise<void>,
+  pinList: (listID: uuid) => Promise<void>,
+  removeList: (listID: uuid) => Promise<void>,
+  addTagsToList: (listID: uuid, tags: tag[]) => Promise<void>,
+  removeTagsFromList: (listID: uuid, tags: tag[]) => Promise<void>,
+  addListItem: (listID: uuid, listItem: ShoppingListItem) => Promise<void>,
+  moveListItem: (listID: uuid, listItemID: uuid, nextSiblingID: uuid) => Promise<void>,
+  removeListItem: (listID: uuid, listItemID: uuid) => Promise<void>,
+  editListItem: (listID: uuid, listItemID: uuid, content: string) => Promise<void>,
+  markListItemCompleted: (listID: uuid, listItemID: uuid) => Promise<void>,
+  markListItemPending: (listID: uuid, listItemID: uuid) => Promise<void>,
 }
 
 // `ApplicationState` is passed to `React.useState(...)` hook.

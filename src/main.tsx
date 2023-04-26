@@ -12,5 +12,10 @@ async () => {
   const rootNode = document.getElementById("root");
 
   if (rootNode)
-    createRoot(rootNode).render(<App state={state} attachSelfToStateManager={stateManager.attachView} />);
+    createRoot(rootNode).render(
+      <App
+        state={state}
+        attachSelfToStateManager={stateManager.attachView}
+      />
+    );
 }
