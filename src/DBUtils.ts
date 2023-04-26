@@ -23,42 +23,6 @@ const DB_VERSION = 1;
 const DB_APP_STATE_STORE_NAME = "applicationState";
 const DB_SHOPPING_LIST_STORE_NAME = "shoppingLists";
 
-function getApplicationState(db: IDBDatabase): Promise<ApplicationState> {
-  return new Promise((resolve, reject) => {
-    const stateRecordRequest = requestStateRecord(db);
-    stateRecordRequest.onsuccess = (_) => {
-      const { tags, query, shoppingLists: shoppingListIDs } = stateRecordRequest.result;
-
-      getAllShoppingListRecords(shoppingListIDs)
-        .then(listArr => resolve({ tags, query, shoppingLists: listFromArray(listArr), isNetworkAvailable: true }))
-        .catch(error => reject(error))
-    };
-    stateRecordRequest.onerror = (_) => reject(stateRecordRequest.error);
-
-    function requestStateRecord(db: IDBDatabase): IDBRequest {
-      return db
-        .transaction([DB_APP_STATE_STORE_NAME], "readonly")
-        .objectStore(DB_APP_STATE_STORE_NAME)
-        .get(DB_VERSION)
-    }
-
-    function getAllShoppingListRecords(ids: List<uuid>): Promise<Array<ShoppingList>> {
-      const shoppingListsStore = db.transaction([DB_SHOPPING_LIST_STORE_NAME]).objectStore(DB_SHOPPING_LIST_STORE_NAME);
-
-      return Promise.all(listToArray(ids).map(getShoppingListRecord(shoppingListsStore)));
-    }
-
-    function getShoppingListRecord(store: IDBObjectStore) {
-      return function (id: uuid): Promise<ShoppingListRecord> {
-        return new Promise((resolve, reject) => {
-          const request = store.get(id);
-          request.onsuccess = () => (resolve(request.result));
-          request.onerror = () => (reject(request.error));
-        })
-      }
-    }
-  })
-}
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -66,31 +30,53 @@ function openDatabase(): Promise<IDBDatabase> {
 
     openDbRequest.onsuccess = (_) => resolve(openDbRequest.result);
     openDbRequest.onerror = (_) => reject(openDbRequest.error);
+
     openDbRequest.onupgradeneeded = (_) => {
       const db: IDBDatabase = openDbRequest.result;
-      initilizeShoppingListObjectStore(db);
-      initilizeStateObjectStore(db);
-    };
 
-    function initilizeShoppingListObjectStore(db: IDBDatabase): void {
+      // Initialize shopping list store (see `ShoppingListRecord` in CoreTypes)
       db.createObjectStore(DB_SHOPPING_LIST_STORE_NAME, { keyPath: "id" });
-    }
 
-    function initilizeStateObjectStore(db: IDBDatabase): void {
+      // Initialize application state store (see `StateRecord` in CoreTypes)
       db.createObjectStore(DB_APP_STATE_STORE_NAME, { keyPath: "id" })
-        .transaction
-        .oncomplete = (_) => storeEmptyStateRecord(db);
-    }
+        .transaction.oncomplete = (_) => {
+          db.transaction(DB_APP_STATE_STORE_NAME, "readwrite")
+            // Add an empty state record to the object store
+            .objectStore(DB_APP_STATE_STORE_NAME).add({
+              id: DB_VERSION,
+              tags: [],
+              query: {},
+              shoppingLists: null,
+            } as StateRecord)
+        }
+    };
+  })
+}
 
-    function storeEmptyStateRecord(db: IDBDatabase): void {
-      db.transaction(DB_APP_STATE_STORE_NAME, "readwrite")
-        .objectStore(DB_APP_STATE_STORE_NAME)
-        .add({
-          id: DB_VERSION,
-          tags: [],
-          query: {},
-          shoppingLists: null,
-        } as StateRecord)
+function getApplicationState(db: IDBDatabase): Promise<ApplicationState> {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([DB_SHOPPING_LIST_STORE_NAME, DB_APP_STATE_STORE_NAME], "readonly");
+    transaction.onerror = (_) => reject(transaction.error);
+
+    const listStore = transaction.objectStore(DB_SHOPPING_LIST_STORE_NAME);
+    const stateStore = transaction.objectStore(DB_APP_STATE_STORE_NAME);
+
+    const getStateRequest = stateStore.get(DB_VERSION);
+    getStateRequest.onsuccess = (_) => {
+      const { tags, query, shoppingLists: ids } = getStateRequest.result as StateRecord;
+
+      function getList(id: uuid): Promise<ShoppingListRecord> {
+        return new Promise((resolve) => {
+          const getListRequest = listStore.get(id);
+          getListRequest.onsuccess = () => (resolve(getListRequest.result));
+        })
+      }
+
+      const getAllLists = listToArray(ids).map(getList);
+
+      Promise.all(getAllLists)
+        .then(listArr => resolve({ tags, query, shoppingLists: listFromArray(listArr), isNetworkAvailable: true }))
+        .catch(error => reject(error))
     }
   })
 }
@@ -230,19 +216,17 @@ function removeTagsFromList(db: IDBDatabase, listID: uuid, tags: tag[]): Promise
 function addListItem(db: IDBDatabase, listID: uuid, listItem: ShoppingListItem): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(DB_SHOPPING_LIST_STORE_NAME, "readwrite");
-    transaction.oncomplete = (_) => { resolve(); };
-    transaction.onabort = (_) => { reject(); };
+    transaction.oncomplete = (_) => resolve();
+    transaction.onabort = (_) => reject();
 
     const store = transaction.objectStore(DB_SHOPPING_LIST_STORE_NAME);
     const getListRequest = store.get(listID);
 
-    getListRequest.onerror = (_) => { transaction.abort(); };
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
       list.items = append(listItem, list.items);
 
-      const putListRequest = store.put(list);
-      putListRequest.onerror = (_) => { transaction.abort(); };
+      store.put(list);
     }
   })
 }
@@ -250,25 +234,24 @@ function addListItem(db: IDBDatabase, listID: uuid, listItem: ShoppingListItem):
 function moveListItem(db: IDBDatabase, listID: uuid, listItemID: uuid, nextSiblingID: uuid): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(DB_APP_STATE_STORE_NAME, "readwrite");
-    transaction.oncomplete = (_) => { resolve(); };
-    transaction.onabort = (_) => { reject(); };
+    transaction.oncomplete = (_) => resolve();
+    transaction.onabort = (_) => reject();
 
     const store = transaction.objectStore(DB_SHOPPING_LIST_STORE_NAME);
+
     const getListRequest = store.get(listID);
-    getListRequest.onerror = (_) => { transaction.abort(); };
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
 
-      const storeElt: any = {};
-      const restElts = extractElt((item) => item.id === listItemID, list.items, storeElt);
+      const listItem: { element?: ShoppingListItem } = {};
+      const restElts = extractElt((item) => item.id === listItemID, list.items, listItem);
+      const { element } = listItem;
 
-      if (!storeElt.element)
-        transaction.abort();
-      else {
-        list.items = appendBefore(storeElt.element, (x) => x.id === nextSiblingID, restElts);
-
-        const putListRequest = store.put(list);
-        putListRequest.onerror = (_) => { transaction.abort(); };
+      if (!element) {
+        transaction.abort(); //TODO: log error 
+      } else {
+        list.items = appendBefore(element, (x) => x.id === nextSiblingID, restElts);
+        store.put(list);
       }
     }
   })
@@ -281,14 +264,13 @@ function removeListItem(db: IDBDatabase, listID: uuid, listItemID: uuid): Promis
     transaction.onabort = (_) => reject();
 
     const store = transaction.objectStore(DB_SHOPPING_LIST_STORE_NAME);
+
     const getListRequest = store.get(listID);
-    getListRequest.onerror = (_) => transaction.abort();
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
       list.items = removeElt((elt) => elt.id === listItemID, list.items);
 
-      const putListRequest = store.put(list);
-      putListRequest.onerror = (_) => transaction.abort();
+      store.put(list);
     }
   })
 }
@@ -302,13 +284,11 @@ function editListItem(db: IDBDatabase, listID: uuid, listItemID: uuid, content: 
     const store = transaction.objectStore(DB_SHOPPING_LIST_STORE_NAME);
 
     const getListRequest = store.get(listID);
-    getListRequest.onerror = (_) => transaction.abort();
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
       list.items = project((elt) => elt.id === listItemID, (elt) => (elt.content = content, elt), list.items);
 
-      const putListRequest = store.put(list);
-      putListRequest.onerror = (_) => transaction.abort();
+      store.put(list);
     }
   })
 }
@@ -322,14 +302,12 @@ function markListItemCompleted(db: IDBDatabase, listID: uuid, listItemID: uuid):
     const store = transaction.objectStore(DB_SHOPPING_LIST_STORE_NAME);
 
     const getListRequest = store.get(listID);
-    getListRequest.onerror = (_) => transaction.abort();
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
       const completed = ShoppingListItemType.CompletedTask;
       list.items = project((elt) => elt.id === listItemID, (elt) => (elt.type = completed, elt), list.items);
 
-      const putListRequest = store.put(list);
-      putListRequest.onerror = (_) => transaction.abort();
+      store.put(list);
     }
   })
 }
@@ -343,14 +321,12 @@ function markListItemPending(db: IDBDatabase, listID: uuid, listItemID: uuid): P
     const store = transaction.objectStore(DB_SHOPPING_LIST_STORE_NAME);
 
     const getListRequest = store.get(listID);
-    getListRequest.onerror = (_) => transaction.abort();
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
       const pending = ShoppingListItemType.PendingTask;
       list.items = project((elt) => elt.id === listItemID, (elt) => (elt.type = pending, elt), list.items);
 
-      const putListRequest = store.put(list);
-      putListRequest.onerror = (_) => transaction.abort();
+      store.put(list);
     }
   })
 }
