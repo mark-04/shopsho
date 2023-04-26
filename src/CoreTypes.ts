@@ -20,8 +20,6 @@ export type Model = {
   editListItem: (listID: uuid, listItemID: uuid, content: string) => void,
   markListItemCompleted: (listID: uuid, listItemID: uuid) => void,
   markListItemPending: (listID: uuid, listItemID: uuid) => void,
-
-  attachView: () => any,//TODO: provide concrete type
 }
 
 // `ApplicationState` is passed to `React.useState(...)` hook.
