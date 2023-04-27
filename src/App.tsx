@@ -1,5 +1,8 @@
-import React, { createContext, useState } from "react";
+//@ts-nocheck
+
 import { ApplicationState, Model } from "./CoreTypes";
+import { Component, createContext } from "react";
+import MainSection from "./components/MainSection";
 
 export const ModelContext = createContext({});
 
@@ -21,19 +24,16 @@ type Props = {
   attachSelfToStateManager: ((triggerViewUpdate: (state: ApplicationState) => void) => Model)
 }
 
-export default function App(props: Props) {
-  const {
-    state,
-    attachSelfToStateManager,
-  } = props;
+export default class App extends Component {
+  constructor(props: Props) {
+    super(props);
+    this.state = props.state;
+    this.model = this.props.attachSelfToStateManager(this.setState.bind(this));
+  }
 
-  const [viewState, setViewState] = useState(state);
-  const model = attachSelfToStateManager(setViewState);
-
-  return (
-    <ModelContext.Provider value={model}>
-      <>...</>
+  render = () => (
+    <ModelContext.Provider value={this.model}>
+      <MainSection shoppingLists={this.state.shoppingLists} />
     </ModelContext.Provider>
   )
 }
-
