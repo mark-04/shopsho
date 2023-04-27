@@ -1,7 +1,7 @@
 import React, { createContext, useState } from "react";
 import { ApplicationState, Model } from "./CoreTypes";
 
-const ModelContext = createContext({});
+export const ModelContext = createContext({});
 
 // `Props` are passed to the `App` component from a state manager.
 // The state manager must be initialized before the `App` component.
