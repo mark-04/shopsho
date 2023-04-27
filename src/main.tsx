@@ -1,10 +1,12 @@
+//@ts-nocheck
+
 import Db from "./DBUtils";
 import { StateManager } from "./StateManager";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 
-async () => {
+(async () => {
   const db = await Db.openDatabase();
   const state = await Db.getApplicationState(db);
   const stateManager = new StateManager(db, state);
@@ -18,4 +20,4 @@ async () => {
         attachSelfToStateManager={stateManager.attachView}
       />
     );
-}
+})()
