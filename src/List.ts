@@ -36,10 +36,10 @@
 
 type List<T> = { head?: T, tail?: List<T>, normalized?: boolean }
 
-const empty: <T>() => List<T> =
+export const empty: <T>() => List<T> =
   () => ({ normalized: true })
 
-const isList: <T>(list: List<T>) => boolean =
+export const isList: <T>(list: List<T>) => boolean =
   (list) => (
     typeof list === "object" && list !== null && !Array.isArray(list)
   );
@@ -68,7 +68,7 @@ const isNotEmpty: <T>(list: List<T>) => boolean =
 
 // does not check if a list is normalized
 // should always be called after List.normalize(...) had been called
-const isEmpty: <T>(list: List<T>) => boolean =
+export const isEmpty: <T>(list: List<T>) => boolean =
   (list) => !list.hasOwnProperty("head");
 
 // does not check if a list is normalized
@@ -122,7 +122,7 @@ const normalize: <T>(list: List<T>) => void =
     }
   }
 
-const prepend: <T>(elt: T, list: List<T>) => void =
+export const prepend: <T>(elt: T, list: List<T>) => void =
   (elt, list) => {
     normalize(list);
 
@@ -140,7 +140,7 @@ const prepend: <T>(elt: T, list: List<T>) => void =
 
 // errors when given an empty list
 // normalizes the list and its tail before returning it 
-const tail: <T>(list: List<T>) => List<T> =
+export const tail: <T>(list: List<T>) => List<T> =
   (list) => {
     normalize(list);
     errorIfEmpty(list);
@@ -149,7 +149,7 @@ const tail: <T>(list: List<T>) => List<T> =
     return list.tail;
   }
 
-const iter: <T>(f: (elt: T) => void, list: List<T>) => void =
+export const iter: <T>(f: (elt: T) => void, list: List<T>) => void =
   (f, list) => {
     normalize(list);
 
@@ -162,7 +162,7 @@ const iter: <T>(f: (elt: T) => void, list: List<T>) => void =
 
 // selects an element of the list that satisfies the predicate and modifies it in place 
 // by applying f to it and storing the result as a new value 
-const project: <T>(pred: ((elt: T) => boolean), f: ((elt: T) => T), list: List<T>) => void =
+export const project: <T>(pred: ((elt: T) => boolean), f: ((elt: T) => T), list: List<T>) => void =
   (pred, f, list) => {
     normalize(list);
 
@@ -178,7 +178,7 @@ const project: <T>(pred: ((elt: T) => boolean), f: ((elt: T) => T), list: List<T
     }
   }
 
-const projectAll: <T>(pred: ((elt: T) => boolean), f: ((elt: T) => T), l: List<T>) => void =
+export const projectAll: <T>(pred: ((elt: T) => boolean), f: ((elt: T) => T), l: List<T>) => void =
   (pred, f, list) => {
     normalize(list);
 
@@ -192,7 +192,7 @@ const projectAll: <T>(pred: ((elt: T) => boolean), f: ((elt: T) => T), l: List<T
     }
   }
 
-const append: <T>(elt: T, list: List<T>) => void =
+export const append: <T>(elt: T, list: List<T>) => void =
   (elt, list) => {
     normalize(list);
 
@@ -205,7 +205,7 @@ const append: <T>(elt: T, list: List<T>) => void =
     normalize(list);
   }
 
-const appendBefore: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T>) => void =
+export const appendBefore: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T>) => void =
   (elt, pred, list) => {
     normalize(list);
 
@@ -233,7 +233,7 @@ const appendBefore: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T>) => v
     }
   }
 
-const appendAfter: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T>) => void =
+export const appendAfter: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T>) => void =
   (elt, pred, list) => {
     normalize(list);
 
@@ -252,7 +252,7 @@ const appendAfter: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T>) => vo
   }
 
 // errors if the element was not found
-const findElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | notFound =
+export const findElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | notFound =
   (pred, list) => {
     normalize(list);
 
@@ -279,7 +279,7 @@ const findElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | notFound =
   }
 
 // errors if the element was not found
-const removeElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | notFound =
+export const removeElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | notFound =
   (pred, list) => {
     normalize(list);
 
@@ -309,7 +309,7 @@ const removeElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | notFound
   }
 
 // errors if the element was not found
-const moveEltToFront: <T>(pred: ((elt: T) => boolean), list: List<T>) => void =
+export const moveEltToFront: <T>(pred: ((elt: T) => boolean), list: List<T>) => void =
   (pred, list) => {
     normalize(list);
 
@@ -333,7 +333,7 @@ const moveEltToFront: <T>(pred: ((elt: T) => boolean), list: List<T>) => void =
   }
 
 // errors if either of the elements was not found  
-const moveEltBefore: <T>(eltPred: ((elt: T) => boolean), sibPred: ((sib: T) => boolean), list: List<T>) => void =
+export const moveEltBefore: <T>(eltPred: ((elt: T) => boolean), sibPred: ((sib: T) => boolean), list: List<T>) => void =
   (eltPred, sibPred, list) => {
     normalize(list);
 
@@ -354,7 +354,7 @@ const moveEltBefore: <T>(eltPred: ((elt: T) => boolean), sibPred: ((sib: T) => b
     throw new Error("Not found");
   }
 
-const moveEltAfter: <T>(eltPred: ((elt: T) => boolean), sibPred: ((sib: T) => boolean), list: List<T>) => void =
+export const moveEltAfter: <T>(eltPred: ((elt: T) => boolean), sibPred: ((sib: T) => boolean), list: List<T>) => void =
   (eltPred, sibPred, list) => {
     normalize(list);
 
@@ -379,7 +379,7 @@ const moveEltAfter: <T>(eltPred: ((elt: T) => boolean), sibPred: ((sib: T) => bo
     throw new Error("Not found");
   }
 
-const fromArray: <T>(arr: Array<T>) => List<T> =
+export const fromArray: <T>(arr: Array<T>) => List<T> =
   (arr) => {
     const list = empty();
 
@@ -390,7 +390,7 @@ const fromArray: <T>(arr: Array<T>) => List<T> =
     return list;
   }
 
-const toArray: <T>(list: List<T>) => Array<T> =
+export const toArray: <T>(list: List<T>) => Array<T> =
   (list) => {
     const arr: T[];
     iter((elt) => arr.push(elt), list);
