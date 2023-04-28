@@ -252,7 +252,7 @@ export const appendAfter: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T>
   }
 
 // errors if the element was not found
-export const findElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | notFound =
+export const findElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T =
   (pred, list) => {
     normalize(list);
 
@@ -279,7 +279,7 @@ export const findElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | not
   }
 
 // errors if the element was not found
-export const removeElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T | notFound =
+export const removeElt: <T>(pred: ((elt: T) => boolean), list: List<T>) => T =
   (pred, list) => {
     normalize(list);
 
