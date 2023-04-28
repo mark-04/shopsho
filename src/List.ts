@@ -25,7 +25,7 @@
 //  Therefore, it is recommended to always construct lists using procedures exported by this library    
 
 //  For example, avoid writting "const list = {head: 7, tail: {head: 5}}" 
-//  Write "const list = List.empty(); prepende(5, list); prepende(7, list)" instead
+//  Write "const list = List.empty(); prepend(5, list); prepend(7, list)" instead
 //  That way, list is guaranteed to always be normalized
 
 //  WARNING: Cyclic lists are not rejected during normalization 
