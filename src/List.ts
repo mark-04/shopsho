@@ -1,5 +1,5 @@
 //@ts-nocheck
-// TS inferes general List<T> type, i.e. { head?: T, tail?: List<T>, [normalized]?: boolean }, 
+// TS inferes general List<T> type, i.e. { head?: T, tail?: List<T>, normalized?: boolean }, 
 // for a given <obj> even in if-branches with <obj>.hasOwnProperty(...) check(s) 
 // i.e. it disallows accessing <obj>.head and/or <obj>.tail because it believes that
 //      the <obj> may not have these properties, even in those blocks of code where 
