@@ -100,7 +100,7 @@ const normalize: <T>(list: List<T>) => void =
 
     if (!listStartPtr.hasOwnProperty("head") && !listStartPtr.hasOwnProperty("tail")) {
       delete list.tail;
-      list[normalized] = true;
+      list.normalized = true;
 
       return;
     }
@@ -108,7 +108,7 @@ const normalize: <T>(list: List<T>) => void =
     if (listStartPtr.hasOwnProperty("head") && !listStartPtr.hasOwnProperty("tail")) {
       list.head = listStartPtr.head;
       list.tail = {};
-      list[normalized] = true;
+      list.normalized = true;
 
       return;
     }
@@ -116,7 +116,7 @@ const normalize: <T>(list: List<T>) => void =
     if (listStartPtr.hasOwnProperty("head") && listStartPtr.hasOwnProperty("tail")) {
       list.head = listStartPtr.head;
       list.tail = listStartPtr.tail;
-      list[normalized] = true;
+      list.normalized = true;
 
       return;
     }
@@ -132,9 +132,8 @@ export const prepend: <T>(elt: T, list: List<T>) => void =
     } else {
       normalize(list.tail);
       list.tail = { head: list.head, tail: list.tail };
-      list.tail[normalized] = true;
+      list.tail.normalized = true;
       list.head = elt;
-      list[normalized] = true;
     }
   }
 
@@ -222,7 +221,7 @@ export const appendBefore: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T
 
       if (pred(list.tail.head)) {
         list.tail.tail = { head: list.tail.head, tail: list.tail.tail };
-        list.tail[normalized] = true;
+        list.tail.normalized = true;
         list.tail.head = elt;
 
         return;
@@ -241,7 +240,7 @@ export const appendAfter: <T>(elt: T, pred: ((elt: T) => boolean), list: List<T>
       if (pred(list.head)) {
         normalize(list.tail);
         list.tail = { head: elt, tail: list.tail };
-        list.tail[normalized] = true;
+        list.tail.normalized = true;
 
         return;
       }
