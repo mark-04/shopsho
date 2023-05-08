@@ -1,5 +1,3 @@
-import { append, appendBefore, List, project, removeElt, cons, moveEltBefore } from "./List";
-
 import {
   uuid,
   tag,
@@ -12,11 +10,19 @@ import {
 } from "./CoreTypes";
 
 import {
+  append,
+  project,
+  removeElt,
+  moveEltBefore,
+  moveEltToFront,
   toArray as listToArray,
   fromArray as listFromArray
 } from "./List";
 
-import { difference, union } from "./ArrayUtils";
+import {
+  difference,
+  union
+} from "./ArraySet";
 
 const DB_NAME = "db";
 const DB_VERSION = 1;
@@ -46,7 +52,7 @@ function openDatabase(): Promise<IDBDatabase> {
               id: DB_VERSION,
               tags: [],
               query: {},
-              shoppingLists: null,
+              shoppingLists: {},
             } as StateRecord)
         }
     };
@@ -95,7 +101,7 @@ function addList(db: IDBDatabase, list: ShoppingList): Promise<void> {
       const getStateRequest = stateStore.get(DB_VERSION);
       getStateRequest.onsuccess = (_) => {
         const state = getStateRequest.result as StateRecord;
-        state.shoppingLists = append(list.id, state.shoppingLists);
+        append(list.id, state.shoppingLists);
         state.query = {};
 
         stateStore.put(state);
@@ -143,9 +149,7 @@ function pinList(db: IDBDatabase, listID: uuid): Promise<void> {
         const getStateRequest = stateStore.get(DB_VERSION);
         getStateRequest.onsuccess = (_) => {
           const state = getStateRequest.result as StateRecord;
-          // remove element from whatever position it is and put it in the head of a list
-          const id = removeElt((id) => id === listID, state.shoppingLists);
-          state.shoppingLists = cons(id, state.shoppingLists);
+          moveEltToFront((id) => (id === listID), state.shoppingLists);
 
           stateStore.put(state);
         }
@@ -219,7 +223,7 @@ function addListItem(db: IDBDatabase, listID: uuid, listItem: ShoppingListItem):
 
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
-      list.items = append(listItem, list.items);
+      append(listItem, list.items);
 
       store.put(list);
     }
@@ -237,7 +241,7 @@ function moveListItem(db: IDBDatabase, listID: uuid, listItemID: uuid, nextSibli
     const getListRequest = store.get(listID);
     getListRequest.onsuccess = (_) => {
       const list = getListRequest.result as ShoppingList;
-      list.items = moveEltBefore(i => i.id === listItemID, s => s.id === nextSiblingID, list.items);
+      moveEltBefore(i => i.id === listItemID, s => s.id === nextSiblingID, list.items);
 
       store.put(list);
     }
