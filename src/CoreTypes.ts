@@ -1,4 +1,4 @@
-import type { List } from "./List"
+import type { List, ListTy } from "./List"
 
 export type dbid = number
 export type uuid = string
@@ -30,7 +30,7 @@ export type Model = {
 export type ApplicationState = {
   tags: tag[];
   query: ShoppingListQuery,
-  shoppingLists: List<ShoppingList>,
+  shoppingLists: ListTy<ShoppingList>,
   isNetworkAvailable: boolean,
 }
 
@@ -39,7 +39,7 @@ export type StateRecord = {
   id: dbid,
   tags: tag[],
   query: ShoppingListQuery,
-  shoppingLists: List<uuid>,
+  shoppingLists: ListTy<uuid>,
 }
 export type ShoppingListRecord =
   ShoppingList;
@@ -53,7 +53,7 @@ export type ShoppingList = {
   id: uuid,
   tags: Array<tag>,
   isPinned: boolean,
-  items: List<ShoppingListItem>,
+  items: ListTy<ShoppingListItem>,
 }
 
 export type ShoppingListItem = {
