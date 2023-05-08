@@ -371,7 +371,7 @@ export const toArray = (list) => {
   const array = [];
   iter((elt) => array.push(elt), list);
 
-  return arr;
+  return array;
 }
 
 export class List {
