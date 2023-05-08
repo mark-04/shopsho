@@ -1,6 +1,6 @@
 import {
   difference, union
-} from "./ArrayUtils";
+} from "./ArraySet";
 
 import {
   uuid, tag,
@@ -14,7 +14,7 @@ import {
 import Db from "./DBUtils";
 
 import {
-  append, cons, moveEltBefore, project, removeElt
+  append, prepend, moveEltBefore, project, removeElt
 } from "./List";
 
 export class StateManager {
@@ -47,7 +47,7 @@ export class StateManager {
   private addList = async (list: ShoppingList): Promise<void> => {
     await Db.addList(this.db, list);
 
-    this.state.shoppingLists = append(list, this.state.shoppingLists);
+    append(list, this.state.shoppingLists);
     this.state.query = {};
 
     if (this.notifyOnStateChange) {
@@ -60,7 +60,7 @@ export class StateManager {
 
     const list = removeElt(l => l.id === listID, this.state.shoppingLists);
     list.isPinned = true;
-    this.state.shoppingLists = cons(list, this.state.shoppingLists);
+    prepend(list, this.state.shoppingLists);
 
     if (this.notifyOnStateChange) {
       this.notifyOnStateChange(this.state);
@@ -114,7 +114,7 @@ export class StateManager {
 
     project(
       l => l.id === listID,
-      l => (l.items = append(listItem, l.items), l),
+      l => (append(listItem, l.items), l),
       this.state.shoppingLists
     );
 
@@ -128,7 +128,7 @@ export class StateManager {
 
     project(
       l => l.id === listID,
-      l => (l.items = moveEltBefore(i => i.id === listItemID, s => s.id === nextSiblingID, l.items), l),
+      l => (moveEltBefore(i => i.id === listItemID, s => s.id === nextSiblingID, l.items), l),
       this.state.shoppingLists
     );
 

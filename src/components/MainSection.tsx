@@ -10,9 +10,9 @@ export default function MainSection(props) {
   const lists = props.shoppingLists;
 
   const emptyList: () => ShoppingListTy =
-    () => ({ id: mkUUID(), tags: [], isPinned: false, items: null });
+    () => ({ id: mkUUID(), tags: [], isPinned: false, items: {} });
 
-  const renderShoppingLists = lists => listToArray(lists).map(list => <ShoppingList list={list} />)
+  const renderShoppingLists = (lists) => listToArray(lists).map((list) => <ShoppingList list={list} />)
   const handleAddList = () => model.addList(emptyList());
 
   return (
